@@ -4,11 +4,50 @@ from .models import Restaurant, Category, MenuItem
 from .serializers import RestaurantSerializer, CategorySerializer, MenuItemSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 
 from django.views.decorators.csrf import csrf_exempt
 
 
 import json
+
+class RestaurantListAPIView(APIView):
+    def get(self,request):
+        restaurants = Restaurant.objects.all()
+        serializer = RestaurantSerializer(restaurants, many=True)
+        return Response(serializer.data)
+    
+    def post(self,request):
+        data = request.data
+        serializer_post = RestaurantSerializer(data=data)
+        serializer_post.is_valid(raise_exception=True)
+        serializer_post.save()
+        return Response(serializer_post.data, status=201)
+
+class RestaurantDetailAPIView(APIView):
+
+    def get_object(self, restaurant_id):
+        return get_object_or_404(Restaurant,id=restaurant_id)
+
+    
+    def get(self,request, restaurant_id):
+        restaurant = self.get_object(restaurant_id)
+        serializer = RestaurantSerializer(restaurant)
+        return Response(serializer.data)
+
+    def patch(self,request, restaurant_id):
+        restaurant = self.get_object(restaurant_id)
+        serializer_patch = RestaurantSerializer(instance=restaurant, partial=True, data=request.data)
+        serializer_patch.is_valid(raise_exception=True)
+        serializer_patch.save()
+        return Response(serializer_patch.data)
+
+    def delete(self, request, restaurant_id):
+        restaurant = self.get_object(restaurant_id)
+        restaurant.delete()
+        return Response({"message": "deleted"})
+
 
 
 
@@ -89,45 +128,5 @@ def categories_detail(request, category_id):
 
         return Response({"message": "deleted"}, status=200)
 
-        
 
 
-# Create your views here.
-@api_view(["GET", "POST"])
-def restaurants_list(request):
-    if request.method == 'GET':
-        restaurants = Restaurant.objects.all()
-        serializer = RestaurantSerializer(restaurants, many=True)
-        return Response(serializer.data)
-
-    elif request.method == 'POST':
-        data = request.data
-        serializer_post = RestaurantSerializer(data=data)
-        serializer_post.is_valid(raise_exception=True)
-        serializer_post.save()
-        return Response(serializer_post.data, status=201)
-
-
-@api_view(["GET", "DELETE", "PATCH"])
-def restaurants_detail(request , restaurant_id):
-
-    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
-
-
-    if request.method == "GET":
-
-
-        serializer = RestaurantSerializer(restaurant)
-
-        return Response(serializer.data)
-    
-    elif request.method == "DELETE":
-        
-        restaurant.delete()
-        return Response({"message": "Deleted."}, status=200)
-    
-    elif request.method == "PATCH":
-        serializer_patch = RestaurantSerializer(partial=True, instance=restaurant, data=request.data)
-        serializer_patch.is_valid(raise_exception=True)
-        serializer_patch.save()
-        return Response(serializer_patch.data)
