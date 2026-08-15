@@ -59,6 +59,50 @@ class MenuItemValidationTests(APITestCase):
             restaurant=self.restaurant
         )
 
+        self.menu_item = MenuItem.objects.create(
+            name="Pepperoni",
+            price=1000,
+            category=self.category
+        )
+
+    def test_get_menu_item_detail_returns_200(self):
+        response = self.client.get(f"/menu-items/{self.menu_item.id}/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["name"],
+            self.menu_item.name,
+        )
+
+    def test_patch_menu_item_updates_price_returns_200(self):
+        data = {
+            "price" : 1500,
+        }
+        response = self.client.patch(f"/menu-items/{self.menu_item.id}/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["price"], data["price"]
+        )
+        self.menu_item.refresh_from_db()
+        self.assertEqual(
+            self.menu_item.price,
+            data["price"]
+        )
+
+    def test_get_missing_menu_item_returns_404(self):
+        missing_id = 99999
+
+        response = self.client.get(f"/menu-items/{missing_id}/")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_menu_item_returns_204(self):
+
+        response = self.client.delete(f"/menu-items/{self.menu_item.id}/")
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(MenuItem.objects.filter(id=self.menu_item.id).exists())
+
+
     def test_post_return_400(self):
         data = {
             "name": "Free pizza",
@@ -66,13 +110,13 @@ class MenuItemValidationTests(APITestCase):
             "category": self.category.id
         }
 
+        items_count_before = MenuItem.objects.count()
+
         response = self.client.post(
             "/menu-items/",
             data,
             format="json"
         )
         self.assertIn("price", response.data)
+        self.assertEqual(MenuItem.objects.count(), items_count_before)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(MenuItem.objects.count() , 0)
-
-# Create your tests here.
