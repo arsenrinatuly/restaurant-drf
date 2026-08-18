@@ -3,8 +3,79 @@ from .models import Restaurant, Category, MenuItem
 from rest_framework.test import APITestCase
 from rest_framework import status
 
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+
+class AuthenticationPermissionTests(APITestCase):
+    def test_anonymous_user_cannot_create_restaurant(self):
+        data = {
+            "name": "New Restaurant",
+            "city": "Almaty"
+        }
+        restaurants_count_before = Restaurant.objects.count()
+        response = self.client.post(
+            "/restaurants/",
+            data,
+            format = "json"
+
+            )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Restaurant.objects.count(), restaurants_count_before)
+
+    def test_user_can_obtain_token(self):
+        password="StrongTestPass123!"
+        self.user = User.objects.create_user(
+            username="testuser",
+            password=password,
+        )
+        data = {
+            "username": "testuser",
+            "password" : password,
+        }
+        response = self.client.post("/api/token/", data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("token", response.data)
+
+    def test_user_with_token_can_create_restaurant(self):
+        password="StrongTestPass123!"
+        self.user = User.objects.create_user(
+            username="testuser",
+            password=password,
+        )
+        data = {
+            "username": "testuser",
+            "password" : password,
+        }
+
+        data_restaurant = {
+            "name": "New Restaurant",
+            "city": "Almaty"
+        }
+        restaurants_count_before = Restaurant.objects.count()
+
+
+        token_response = self.client.post("/api/token/", data=data, format="json")
+        self.assertEqual(
+            token_response.status_code, status.HTTP_200_OK,
+        )
+        token = token_response.data["token"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
+        response = self.client.post("/restaurants/",data=data_restaurant, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Restaurant.objects.count(), restaurants_count_before+1)
+
+
 class RestaurantListAPITests(APITestCase):
     def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser",
+            password="StrongTestPass123!",
+        )
+        self.client.force_authenticate(user=self.user)
+
         self.restaurant = Restaurant.objects.create(
             name="Test Restaurant",
             city="Astana"
@@ -50,6 +121,12 @@ class RestaurantListAPITests(APITestCase):
 
 class MenuItemValidationTests(APITestCase):
     def setUp(self):
+        self.user = User.objects.create_user(
+            username="testuser",
+            password="StrongTestPass123!",
+        )
+        self.client.force_authenticate(user=self.user)
+
         self.restaurant = Restaurant.objects.create(
             name="Test Restaurant",
             city="Astana"
