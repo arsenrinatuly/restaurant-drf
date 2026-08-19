@@ -142,6 +142,21 @@ class MenuItemValidationTests(APITestCase):
             category=self.category
         )
 
+    def test_put_menu_item_updates_all_fields_returns_200(self):
+        data = {
+            "name": "Free pizza",
+            "price" : 1200,
+            "category": self.category.id
+        }
+        response = self.client.put(f"/menu-items/{self.menu_item.id}/",data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.menu_item.refresh_from_db()
+        self.assertEqual(self.menu_item.name, data["name"])
+        self.assertEqual(self.menu_item.price, data["price"])
+        self.assertEqual(self.menu_item.category_id, data["category"])
+
+
+
     def test_get_menu_item_detail_returns_200(self):
         response = self.client.get(f"/menu-items/{self.menu_item.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

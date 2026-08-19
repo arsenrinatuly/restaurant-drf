@@ -14,12 +14,14 @@ and includes automated API tests.
 - Positive-price validation for menu items
 - PostgreSQL persistence
 - Automated tests for CRUD, validation, permissions, and token authentication
+- Interactive Swagger UI and an OpenAPI schema
 
 ## Tech stack
 
 - Python 3.12
 - Django 6.1
 - Django REST Framework 3.18
+- drf-spectacular 0.30
 - PostgreSQL 18
 - Psycopg 3
 - python-dotenv
@@ -51,20 +53,37 @@ The local base URL is `http://127.0.0.1:8000`.
 | `GET` | `/restaurants/` | Public | List restaurants |
 | `POST` | `/restaurants/` | Token required | Create a restaurant |
 | `GET` | `/restaurants/<id>/` | Public | Retrieve a restaurant |
+| `PUT` | `/restaurants/<id>/` | Token required | Fully update a restaurant |
 | `PATCH` | `/restaurants/<id>/` | Token required | Partially update a restaurant |
 | `DELETE` | `/restaurants/<id>/` | Token required | Delete a restaurant |
 | `GET` | `/categories/` | Public | List categories |
 | `POST` | `/categories/` | Token required | Create a category |
 | `GET` | `/categories/<id>/` | Public | Retrieve a category |
+| `PUT` | `/categories/<id>/` | Token required | Fully update a category |
 | `PATCH` | `/categories/<id>/` | Token required | Partially update a category |
 | `DELETE` | `/categories/<id>/` | Token required | Delete a category |
 | `GET` | `/menu-items/` | Public | List menu items |
 | `POST` | `/menu-items/` | Token required | Create a menu item |
 | `GET` | `/menu-items/<id>/` | Public | Retrieve a menu item |
+| `PUT` | `/menu-items/<id>/` | Token required | Fully update a menu item |
 | `PATCH` | `/menu-items/<id>/` | Token required | Partially update a menu item |
 | `DELETE` | `/menu-items/<id>/` | Token required | Delete a menu item |
 | `POST` | `/api/token/` | Public | Exchange credentials for a token |
 | `GET` | `/admin/` | Staff only | Open the Django admin site |
+
+## API documentation
+
+After starting the development server, open:
+
+- Swagger UI: `http://127.0.0.1:8000/api/docs/`
+- OpenAPI schema: `http://127.0.0.1:8000/api/schema/`
+
+Swagger UI lists all available endpoints and request fields. To try a protected
+request, click **Authorize** and enter the token in this format:
+
+```text
+Token your-token-key
+```
 
 ## Request data
 
@@ -232,7 +251,7 @@ python manage.py test restaurants
 ```
 
 The tests cover public and protected requests, valid and invalid creation,
-detail retrieval, partial updates, deletion, missing resources, price
+detail retrieval, full and partial updates, deletion, missing resources, price
 validation, token issuance, and using a real token on a protected endpoint.
 
 The configured PostgreSQL user needs the local `CREATEDB` privilege because
