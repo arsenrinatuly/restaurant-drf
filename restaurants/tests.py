@@ -155,8 +155,44 @@ class MenuItemValidationTests(APITestCase):
         self.assertEqual(self.menu_item.price, data["price"])
         self.assertEqual(self.menu_item.category_id, data["category"])
 
+    def test_filter_menu_items_by_category(self):
+        other_category = Category.objects.create(
+            name="Drinks",
+            restaurant=self.restaurant,
+        )
 
+        MenuItem.objects.create(
+            name="Free pizza",
+            price=1200,
+            category=other_category,
+        )
+        response = self.client.get("/menu-items/", {"category": self.category.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], self.menu_item.id)
 
+    def test_search_menu_items_by_name(self):
+        MenuItem.objects.create(
+            name="Cola",
+            price=500,
+            category=self.category,
+        )
+        response = self.client.get("/menu-items/", {"search": "pep"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"],self.menu_item.id)
+
+    def test_order_menu_items_by_price(self):
+        cheap = MenuItem.objects.create(
+            name="cola",
+            price=500,
+            category=self.category,
+        )
+        response = self.client.get("/menu-items/", {"ordering": "price"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]["id"], cheap.id)
+        self.assertEqual(response.data[1]["id"], self.menu_item.id)
     def test_get_menu_item_detail_returns_200(self):
         response = self.client.get(f"/menu-items/{self.menu_item.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

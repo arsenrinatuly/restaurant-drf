@@ -12,6 +12,7 @@ and includes automated API tests.
 - Token-protected create, update, and delete operations
 - Foreign-key validation for related objects
 - Positive-price validation for menu items
+- Menu-item filtering, search, and ordering through query parameters
 - PostgreSQL persistence
 - Automated tests for CRUD, validation, permissions, and token authentication
 - Interactive Swagger UI and an OpenAPI schema
@@ -21,6 +22,7 @@ and includes automated API tests.
 - Python 3.12
 - Django 6.1
 - Django REST Framework 3.18
+- django-filter 26.1
 - drf-spectacular 0.30
 - PostgreSQL 18
 - Psycopg 3
@@ -84,6 +86,27 @@ request, click **Authorize** and enter the token in this format:
 ```text
 Token your-token-key
 ```
+
+## Filtering, search, and ordering
+
+The menu-item list endpoint supports query parameters:
+
+| Parameter | Example | Description |
+|---|---|---|
+| `category` | `/menu-items/?category=1` | Filter by an exact category ID |
+| `search` | `/menu-items/?search=pep` | Search part of a menu-item name, case-insensitively |
+| `ordering` | `/menu-items/?ordering=price` | Sort by price from lowest to highest |
+| `ordering` | `/menu-items/?ordering=-price` | Sort by price from highest to lowest |
+| `ordering` | `/menu-items/?ordering=name` | Sort alphabetically by name |
+
+Parameters can be combined with `&`:
+
+```http
+GET /menu-items/?category=1&search=pizza&ordering=-price
+```
+
+The leading `-` in an ordering value reverses the sort direction. These query
+parameters are also available interactively in Swagger UI.
 
 ## Request data
 
@@ -252,7 +275,8 @@ python manage.py test restaurants
 
 The tests cover public and protected requests, valid and invalid creation,
 detail retrieval, full and partial updates, deletion, missing resources, price
-validation, token issuance, and using a real token on a protected endpoint.
+validation, token issuance, real-token authentication, filtering, search, and
+ordering.
 
 The configured PostgreSQL user needs the local `CREATEDB` privilege because
 Django creates and destroys a separate test database for each test run.
