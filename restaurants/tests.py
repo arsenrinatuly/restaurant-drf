@@ -83,12 +83,13 @@ class RestaurantListAPITests(APITestCase):
 
     def test_get_restaurants_returns_200(self):
         response = self.client.get("/restaurants/")
+        results = response.data["results"]
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            response.data[0]["name"],
+            results[0]["name"],
             self.restaurant.name
         )
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(results), 1)
 
 
     def test_create_restaurants_return_201(self):
@@ -142,6 +143,32 @@ class MenuItemValidationTests(APITestCase):
             category=self.category
         )
 
+    def test_menu_items_pagination_first_page(self):
+        for number in range(11):
+            MenuItem.objects.create(
+                name=f"Item{number}",
+                price=100 + number,
+                category=self.category,
+            )
+        response = self.client.get("/menu-items/")
+        results = response.data["results"]
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 12)
+        self.assertEqual(len(results), 10)
+        self.assertIsNotNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+
+        second_response = self.client.get(
+            "/menu-items/",
+            {"page": 2},
+        )
+        second_results = second_response.data["results"]
+        self.assertEqual(second_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_response.data["count"], 12)
+        self.assertEqual(len(second_results), 2)
+        self.assertIsNone(second_response.data["next"])
+        self.assertIsNotNone(second_response.data["previous"])
+
     def test_put_menu_item_updates_all_fields_returns_200(self):
         data = {
             "name": "Free pizza",
@@ -167,9 +194,10 @@ class MenuItemValidationTests(APITestCase):
             category=other_category,
         )
         response = self.client.get("/menu-items/", {"category": self.category.id})
+        results = response.data["results"]
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], self.menu_item.id)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["id"], self.menu_item.id)
 
     def test_search_menu_items_by_name(self):
         MenuItem.objects.create(
@@ -178,9 +206,10 @@ class MenuItemValidationTests(APITestCase):
             category=self.category,
         )
         response = self.client.get("/menu-items/", {"search": "pep"})
+        results = response.data["results"]
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"],self.menu_item.id)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["id"],self.menu_item.id)
 
     def test_order_menu_items_by_price(self):
         cheap = MenuItem.objects.create(
@@ -189,10 +218,12 @@ class MenuItemValidationTests(APITestCase):
             category=self.category,
         )
         response = self.client.get("/menu-items/", {"ordering": "price"})
+        results = response.data["results"]
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-        self.assertEqual(response.data[0]["id"], cheap.id)
-        self.assertEqual(response.data[1]["id"], self.menu_item.id)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0]["id"], cheap.id)
+        self.assertEqual(results[1]["id"], self.menu_item.id)
+
     def test_get_menu_item_detail_returns_200(self):
         response = self.client.get(f"/menu-items/{self.menu_item.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

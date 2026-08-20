@@ -13,6 +13,7 @@ and includes automated API tests.
 - Foreign-key validation for related objects
 - Positive-price validation for menu items
 - Menu-item filtering, search, and ordering through query parameters
+- Page-number pagination with 10 objects per page
 - PostgreSQL persistence
 - Automated tests for CRUD, validation, permissions, and token authentication
 - Interactive Swagger UI and an OpenAPI schema
@@ -107,6 +108,51 @@ GET /menu-items/?category=1&search=pizza&ordering=-price
 
 The leading `-` in an ordering value reverses the sort direction. These query
 parameters are also available interactively in Swagger UI.
+
+## Pagination
+
+All list endpoints are paginated with 10 objects per page. Select a page with
+the `page` query parameter:
+
+```http
+GET /menu-items/?page=2
+```
+
+A paginated response has this structure:
+
+```json
+{
+  "count": 12,
+  "next": null,
+  "previous": "http://127.0.0.1:8000/menu-items/",
+  "results": [
+    {
+      "id": 11,
+      "name": "Orange Juice",
+      "price": 700,
+      "category": 2,
+      "category_name": "Drinks"
+    },
+    {
+      "id": 12,
+      "name": "Cola",
+      "price": 500,
+      "category": 2,
+      "category_name": "Drinks"
+    }
+  ]
+}
+```
+
+- `count` is the total number of matching objects across all pages.
+- `next` and `previous` contain navigation URLs or `null`.
+- `results` contains the objects on the current page.
+
+Pagination can be combined with filtering, search, and ordering:
+
+```http
+GET /menu-items/?category=2&search=juice&ordering=price&page=2
+```
 
 ## Request data
 
@@ -276,7 +322,8 @@ python manage.py test restaurants
 The tests cover public and protected requests, valid and invalid creation,
 detail retrieval, full and partial updates, deletion, missing resources, price
 validation, token issuance, real-token authentication, filtering, search, and
-ordering.
+ordering. Pagination tests verify the first and second pages, result counts,
+and navigation links.
 
 The configured PostgreSQL user needs the local `CREATEDB` privilege because
 Django creates and destroys a separate test database for each test run.

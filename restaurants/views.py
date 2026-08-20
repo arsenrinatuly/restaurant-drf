@@ -4,6 +4,7 @@ from rest_framework import generics
 
 
 class RestaurantListCreateAPIView(generics.ListCreateAPIView):
+    ordering = ["id"]
     queryset = Restaurant.objects.all()
     serializer_class = RestaurantSerializer
 
@@ -14,6 +15,7 @@ class RestaurantRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIVi
     lookup_url_kwarg = "restaurant_id"
 
 class CategoryListCreateAPIView(generics.ListCreateAPIView):
+    ordering = ["id"]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
@@ -23,6 +25,7 @@ class CategoryRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView
     lookup_url_kwarg = "category_id"
 
 class MenuItemListCreateAPIView(generics.ListCreateAPIView):
+    ordering = ["id"]
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
     filterset_fields = ["category"]
